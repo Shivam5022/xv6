@@ -25,7 +25,9 @@
 #define SYS_toggle 24
 #define SYS_ps 25
 #define SYS_add 26
-
+#define SYS_send 27
+#define SYS_recv 28 
+#define SYS_send_multi 29
 
 
 

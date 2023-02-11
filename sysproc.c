@@ -44,7 +44,10 @@ static char *syscall_name[] = {
 [SYS_wait]     "sys_wait",
 [SYS_write]    "sys_write",
 [SYS_ps]       "sys_ps",
-[SYS_add]      "sys_add"
+[SYS_add]      "sys_add",
+[SYS_send]     "sys_send",
+[SYS_recv]     "sys_recv",
+[SYS_send_multi]     "sys_send_multi"
 };
 
 int sorted_sys_calls[] = {
@@ -66,7 +69,10 @@ SYS_pipe,
 SYS_print_count,
 SYS_ps,
 SYS_read,
+SYS_recv,
 SYS_sbrk,
+SYS_send,
+SYS_send_multi,
 SYS_sleep,
 SYS_toggle,
 SYS_unlink,
@@ -205,8 +211,6 @@ sys_ps() {
 int
 sys_add(void) {
     int a, b;
-    // if(argint(0, &a) < 0) return -1;
-    // if(argint(1, &b) < 0) return -1;
 
     int i = argint(0, &a);
     int j = argint(1, &b);

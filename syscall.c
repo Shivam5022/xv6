@@ -9,6 +9,8 @@
 
 #include "trace.h"
 
+// queue and spinlock, to be needed in this file.
+
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
 // Arguments on the stack, from the user call to the C
@@ -110,6 +112,9 @@ extern int sys_print_count(void);
 extern int sys_toggle(void);
 extern int sys_ps(void);
 extern int sys_add(void);
+extern int sys_send(void);
+extern int sys_recv(void);
+extern int sys_send_multi(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -137,7 +142,10 @@ static int (*syscalls[])(void) = {
 [SYS_print_count] sys_print_count,
 [SYS_toggle]      sys_toggle,
 [SYS_ps]          sys_ps,
-[SYS_add]         sys_add
+[SYS_add]         sys_add,
+[SYS_send]        sys_send,
+[SYS_recv]        sys_recv,
+[SYS_send_multi]  sys_send_multi
 };
 
 

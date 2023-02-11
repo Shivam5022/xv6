@@ -28,6 +28,9 @@ int print_count(void);
 int toggle(void);
 int ps(void);
 int add(int, int);
+int send(int sender_pid,int rec_pid, void* msg);
+int recv(void *msg);
+int send_multi( int sender_pid, int *rec_pids, void* msg);
 
 
 // ulib.c
