@@ -47,6 +47,33 @@ static char *syscall_name[] = {
 [SYS_add]      "sys_add"
 };
 
+int sorted_sys_calls[] = {
+SYS_add,
+SYS_chdir,
+SYS_close,
+SYS_dup,
+SYS_exec,
+SYS_exit,
+SYS_fork,
+SYS_fstat,
+SYS_getpid,
+SYS_kill,
+SYS_link,
+SYS_mkdir,
+SYS_mknod,
+SYS_open,
+SYS_pipe,
+SYS_print_count,
+SYS_ps,
+SYS_read,
+SYS_sbrk,
+SYS_sleep,
+SYS_toggle,
+SYS_unlink,
+SYS_uptime,
+SYS_wait,
+SYS_write
+};
 
 int
 sys_fork(void)
@@ -160,10 +187,11 @@ sys_toggle() {
 int 
 sys_print_count() {
   int z = 0;
-  for (int i = 0; i < TOT; i++) {
-    if (system_call_count[i] > 0) {
-      cprintf("%s %d\n", syscall_name[i], system_call_count[i]);
-      z += system_call_count[i];
+  for (int i = 0; i < NELEM(sorted_sys_calls); i++) {  // nelem function is defined in defs.h
+    int j = sorted_sys_calls[i];
+    if (system_call_count[j] > 0) {
+      cprintf("%s %d\n", syscall_name[j], system_call_count[j]);
+      z += system_call_count[j];
     }
   }
   return z; // z is the count of all the system calls encountered
@@ -177,8 +205,16 @@ sys_ps() {
 int
 sys_add(void) {
     int a, b;
-    argint(0, &a);
-    argint(1, &b);
+    // if(argint(0, &a) < 0) return -1;
+    // if(argint(1, &b) < 0) return -1;
+
+    int i = argint(0, &a);
+    int j = argint(1, &b);
+
+    if (i < 0 || j < 0) {
+      return -1;
+    }
+
     return a + b;
 }
 

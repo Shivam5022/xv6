@@ -536,7 +536,7 @@ procdump(void)
 int
 ps() {
   struct proc *p;
-  sti();
+  // sti();  // above functions had this line, should i add it or not ? does it change anything :>
   acquire(&ptable.lock);
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
       if (p->state == UNUSED)
