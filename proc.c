@@ -549,62 +549,96 @@ ps() {
 }
 
 
+void
+block(struct spinlock *lk)
+{
+  struct proc *p = myproc();
+  
+  if(lk != &ptable.lock) {
+    acquire(&ptable.lock);
+    release(lk);
+  }
+
+  p->state = SLEEPING;
+  sched();
+  
+  if(lk != &ptable.lock) {
+    release(&ptable.lock);
+    acquire(lk);
+  }
+}
+
+void
+unblock(int pid)
+{
+  struct proc *p;
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      if(p->state == SLEEPING)
+        p->state = RUNNABLE;
+      release(&ptable.lock);
+      return;
+    }
+  }
+}
+
 // refernce taken from above implemented functions
 
-int 
-send(int sender_pid, int rec_pid, void *msg) {
+// int 
+// send(int sender_pid, int rec_pid, void *msg) {
 
-  struct proc *p1;
+//   struct proc *p1;
 
-  for (p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++) {
-    if (p1 -> pid == sender_pid) {
-      break;
-    }
-  }
+//   for (p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++) {
+//     if (p1 -> pid == sender_pid) {
+//       break;
+//     }
+//   }
 
-  struct proc *p2;
+//   struct proc *p2;
 
-  for (p2 = ptable.proc; p2 < &ptable.proc[NPROC]; p2++) {
-    if (p2 -> pid == rec_pid) {
-      break;
-    }
-  }
+//   for (p2 = ptable.proc; p2 < &ptable.proc[NPROC]; p2++) {
+//     if (p2 -> pid == rec_pid) {
+//       break;
+//     }
+//   }
 
-  // p1 is the sender and p2 is the receiver
+//   // p1 is the sender and p2 is the receiver
 
-  if (!p1 || !p2) {
-    cprintf("processes don't exist.......error....\n");
-    return -1; 
-  }
+//   if (!p1 || !p2) {
+//     cprintf("processes don't exist.......error....\n");
+//     return -1; 
+//   }
 
-  if(! p2 -> msg) {
-    cprintf(" the 'rec' process has no msg buffer.......error....\n");
-    return -1; 
-  }
+//   if(! p2 -> msg) {
+//     cprintf(" the 'rec' process has no msg buffer.......error....\n");
+//     return -1; 
+//   }
 
-  memmove(p2->msg, msg, 8);
-  p2 -> received = 1;
+//   memmove(p2->msg, msg, 8);
+//   p2 -> received = 1;
 
-  return 0; // work done => return 0
+//   return 0; // work done => return 0
 
-}
+// }
 
-int 
-recv(void *msg) {
-  struct proc *curproc = myproc();
+// int 
+// recv(void *msg) {
+//   struct proc *curproc = myproc();
 
-  while(curproc -> received == 0) {
-    sleep(curproc, &ptable.lock);   // this is the blocking call
-  }
+//   while(curproc -> received == 0) {
+//     sleep(curproc, &ptable.lock);   // this is the blocking call
+//   }
 
-  memmove(msg, curproc -> msg, 8); // putting the message from buffer into msg pointer
+//   memmove(msg, curproc -> msg, 8); // putting the message from buffer into msg pointer
 
-  // setting the things to default after tranaction
+//   // setting the things to default after tranaction
 
-  curproc -> received = 0; 
-  memset(curproc -> msg, 0, 8);
+//   curproc -> received = 0; 
+//   memset(curproc -> msg, 0, 8);
 
-  return 0; 
+//   return 0; 
 
-}
+// }
 

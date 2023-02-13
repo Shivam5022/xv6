@@ -9,12 +9,19 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct msgQueue;
+struct message;
 
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
+
+//communication.c
+void setup(struct msgQueue* q);
+void insert(struct msgQueue* q,struct message* n);
+struct message* remove(struct msgQueue* q);
 
 // console.c
 void            consoleinit(void);
@@ -121,6 +128,9 @@ int             wait(void);
 void            wakeup(void*);
 void            yield(void);
 int             ps(void);
+
+void block(struct spinlock *);
+void unblock(int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

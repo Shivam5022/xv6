@@ -9,6 +9,9 @@
 
 #include "trace.h"
 
+#include "spinlock.h"
+#include "communication.h"
+
 // queue and spinlock, to be needed in this file.
 
 // User code makes a system call with INT T_SYSCALL.
@@ -175,4 +178,133 @@ syscall(void)
   
 }
 
+
+
+// now we need some data structures for bookkeeping each transaction
+
+int allocated[512] = {0};
+struct message msg_buffer[512];
+struct spinlock buffer_lock;
+struct spinlock msgQueue_locks[NPROC];
+
+int setupp = 0; 
+struct msgQueue QQ[NPROC];  // this is queue of messages for each process
+
+// WHY SPINLOCKS USED (FOR REPORT PURPOSE)
+
+// In the sys_send function, spinlocks are used to protect shared data structures and ensure synchronization between the sender and receiver processes. The spinlocks are used to enforce mutual exclusion between the sender process and any other processes that might be accessing the same data structures.
+
+// The spinlocks are used to prevent the sender process from modifying the message queue while other processes are accessing it. This helps prevent race conditions, where two or more processes might try to modify the same data structure simultaneously, leading to incorrect results.
+
+// For example, in the sys_send function, the spinlock "msgQLocks" is used to protect the message queue "msgQ". Before the sender process inserts a message into the queue, it acquires the spinlock "msgQLocks". This ensures that no other process can access the message queue until the sender process has finished inserting the message. Once the message has been inserted, the sender process releases the spinlock "msgQLocks", allowing other processes to access the message queue again.
+
+// WHY BUFFER USED (IMPORTANT)
+
+// The message is temporarily stored in the buffer because the message passing system needs to allocate memory for the incoming message before adding it to the recipient's message queue. By using a buffer, the message passing system can quickly allocate memory for incoming messages without having to perform a slow memory allocation operation for each message. The buffer also allows for better control and management of memory allocation, as the buffer can be implemented with a fixed size or with a dynamic allocation strategy. Additionally, the buffer can be used to temporarily store messages if the recipient's message queue is full, allowing the sender to continue to send messages without being blocked.
+
+
+int 
+sys_send(void) {
+  if(setupp == 0) {
+    for(int i = 0; i < NPROC; i++) {
+      initlock(&(msgQueue_locks[i]),"msgQueue_locks");
+      initlock(&buffer_lock,"buffer_lock");
+    }
+    for(int i = 0; i < NPROC; i++) {
+      setup(&QQ[i]);
+    }
+    setupp = 1;
+  }  
+
+  int sender_pid;
+  int rec_pid;
+  void* msg;
+
+  // now we need to extract these function arguments from the stack
+
+  int x = argint(0,&sender_pid);
+  int y = argint(1,&rec_pid);
+  int z = argptr(2,(void*)&msg, sizeof(void*));
+
+  if (x < 0 || y < 0 || z < 0) {  // some error in extraction
+    return -1;
+  }
+
+  // send(sender_pid, rec_pid, msg);
+  struct message* final;   // this is the message struct we will add in out data 
+  
+  acquire(&buffer_lock);
+  for(int i=0; i < NELEM(msg_buffer); i++) {
+    if(allocated[i] == 0) {
+      allocated[i] = 1;
+      release(&buffer_lock);
+      final = &msg_buffer[i];
+      
+      final->bp = i;
+      final->sender_pid = sender_pid;
+      memmove(final->msg,msg,8);
+      final->next = 0;
+
+      acquire(&msgQueue_locks[rec_pid]);
+      insert(&QQ[rec_pid],final);  // inserted in the receiver's queue
+      unblock(rec_pid);
+      release(&msgQueue_locks[rec_pid]);
+      return 0;
+    }
+  }
+  // struct message temp;
+  // temp.bp = 0;
+  // temp.sender_pid = sender_pid;
+  // memmove(temp.msg, msg, 8);
+  // temp.next = 0;
+  // final = &temp;
+  // acquire(&msgQueue_locks[rec_pid]);
+  // insert(&QQ[rec_pid],final);
+  // unblock(rec_pid);
+  // release(&msgQueue_locks[rec_pid]);
+
+  return 0;
+}
+
+int 
+sys_recv(void) {
+  if(setupp == 0) {
+    for(int i = 0; i < NPROC; i++) {
+      initlock(&(msgQueue_locks[i]),"msgQueue_locks");
+      initlock(&buffer_lock,"buffer_lock");
+    }
+    for(int i = 0; i < NPROC; i++) {
+      setup(&(QQ[i]));
+    }
+    setupp = 1;
+  }
+
+  void *msg;
+  int currentPID = myproc()->pid;
+  
+  int x = argptr(0, (void*)&msg, sizeof(void*));
+  if(x < 0) {
+    return -1;
+  }
+
+  acquire(&(msgQueue_locks[currentPID]));
+  struct message* tempMSG = remove(&QQ[currentPID]);
+  
+  if(tempMSG == 0) {
+    block(&(msgQueue_locks[currentPID]));
+    tempMSG = remove(&QQ[currentPID]);
+  }
+
+  // cprintf("%s \n", tempMSG -> msg);  // for debugging
+
+  release(&(msgQueue_locks[currentPID]));
+  allocated[tempMSG->bp] = 0;
+  memmove(msg,tempMSG->msg,8);
+
+  return 0;
+}
+
+int sys_send_multi(void) {
+  return 0;
+}
 
