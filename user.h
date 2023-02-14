@@ -32,7 +32,6 @@ int send(int sender_pid,int rec_pid, void* msg);
 int recv(void *msg);
 int send_multi( int sender_pid, int *rec_pids, void* msg);
 
-
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

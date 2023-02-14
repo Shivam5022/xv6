@@ -166,18 +166,16 @@ syscall(void)
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
 
-    if (current_trace_state == TRACE_ON) {  // incrememting the sys_call counts if trace state is ON
+    curproc->tf->eax = syscalls[num]();
+    if (current_trace_state == TRACE_ON && num != SYS_toggle && num != SYS_print_count)  {  // incrememting the sys_call counts if trace state is ON
   		system_call_count[num]++;
     }
-    curproc->tf->eax = syscalls[num]();
   } else {
-    cprintf("%d %s: unknown sys call %d\n",
-            curproc->pid, curproc->name, num);
+    cprintf("%d %s: unknown sys call %d\n",curproc->pid, curproc->name, num);
     curproc->tf->eax = -1;
   }
   
 }
-
 
 
 // now we need some data structures for bookkeeping each transaction
@@ -200,7 +198,9 @@ struct msgQueue QQ[NPROC];  // this is queue of messages for each process
 
 // WHY BUFFER USED (IMPORTANT)
 
-// The message is temporarily stored in the buffer because the message passing system needs to allocate memory for the incoming message before adding it to the recipient's message queue. By using a buffer, the message passing system can quickly allocate memory for incoming messages without having to perform a slow memory allocation operation for each message. The buffer also allows for better control and management of memory allocation, as the buffer can be implemented with a fixed size or with a dynamic allocation strategy. Additionally, the buffer can be used to temporarily store messages if the recipient's message queue is full, allowing the sender to continue to send messages without being blocked.
+// The message is temporarily stored in the buffer because the message passing system needs to allocate memory for the incoming message before adding it to the recipient's message queue.
+//  By using a buffer, the message passing system can quickly allocate memory for incoming messages without having to perform a slow memory allocation operation for each message. The buffer also allows for better control and management of memory allocation, as the buffer can be implemented with a fixed size or with a dynamic allocation strategy. 
+// Additionally, the buffer can be used to temporarily store messages if the recipient's message queue is full, allowing the sender to continue to send messages without being blocked.
 
 
 int 
@@ -241,7 +241,6 @@ sys_send(void) {
       final = &msg_buffer[i];
       
       final->bp = i;
-      final->sender_pid = sender_pid;
       memmove(final->msg,msg,8);
       final->next = 0;
 
@@ -252,6 +251,7 @@ sys_send(void) {
       return 0;
     }
   }
+
   // struct message temp;
   // temp.bp = 0;
   // temp.sender_pid = sender_pid;
@@ -263,6 +263,66 @@ sys_send(void) {
   // unblock(rec_pid);
   // release(&msgQueue_locks[rec_pid]);
 
+  return 0;
+}
+
+int
+sys_send_multi(void) {
+  if(setupp == 0) {
+    for(int i = 0; i < NPROC; i++) {
+      initlock(&(msgQueue_locks[i]),"msgQueue_locks");
+      initlock(&buffer_lock,"buffer_lock");
+    }
+    for(int i = 0; i < NPROC; i++) {
+      setup(&QQ[i]);
+    }
+    setupp = 1;
+  } 
+
+  int sender_pid;
+  int *rec_pids;
+  void* msg;
+
+  int total = 8;  // assume array size is 8, 
+
+  int x = argint(0, &sender_pid);
+  int y = argptr(1, (void*) &rec_pids, total * sizeof(int));
+  int z = argptr(2, (void*) &msg, sizeof(void*));
+
+  if (x < 0 || y < 0 || z < 0) {
+    return -1;
+  }
+
+  for(int j = 0; j < total; j++) {
+    if(rec_pids[j] == -1) {
+      continue;
+    }
+    if(rec_pids[j] != myproc()->pid) {
+      // msg_mcast(rec_pids[i], msg);
+      // do stuff here
+      int rec_pid = rec_pids[j];
+      struct message* final;   // this is the message struct where we will add in our data 
+  
+      acquire(&buffer_lock);
+      for(int i = 0; i < NELEM(msg_buffer); i++) {
+        if(allocated[i] == 0) {
+          allocated[i] = 1;
+          release(&buffer_lock);
+          final = &msg_buffer[i];
+          
+          final->bp = i;
+          memmove(final->msg,msg,8);
+          final->next = 0;
+
+          acquire(&msgQueue_locks[rec_pid]);
+          insert(&QQ[rec_pid],final);  // inserted in the receiver's queue
+          unblock(rec_pid);
+          release(&msgQueue_locks[rec_pid]);
+          break;
+        }
+      }
+    }
+  }
   return 0;
 }
 
@@ -301,10 +361,6 @@ sys_recv(void) {
   allocated[tempMSG->bp] = 0;
   memmove(msg,tempMSG->msg,8);
 
-  return 0;
-}
-
-int sys_send_multi(void) {
   return 0;
 }
 

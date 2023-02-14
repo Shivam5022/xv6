@@ -176,16 +176,16 @@ sys_toggle() {
     current_trace_state = TRACE_OFF;
   } else {
     current_trace_state = TRACE_ON;
-    for (int i = 0; i < TOT; i++) {
-      system_call_count[i] = 0;
-    } 
   }
+  for (int i = 0; i < TOT; i++) {
+    system_call_count[i] = 0;
+  }
+     
+  // if (current_trace_state == TRACE_ON)
+  // cprintf("Toggle is ON \n");
   
-  if (current_trace_state == TRACE_ON)
-  cprintf("Toggle is ON \n");
-  
-  if (current_trace_state == TRACE_OFF)
-  cprintf("Toggle is OFF \n");
+  // if (current_trace_state == TRACE_OFF)
+  // cprintf("Toggle is OFF \n");
   
   return 0;
 }
@@ -195,12 +195,12 @@ sys_print_count() {
   int z = 0;
   for (int i = 0; i < NELEM(sorted_sys_calls); i++) {  // nelem function is defined in defs.h
     int j = sorted_sys_calls[i];
-    if (system_call_count[j] > 0) {
+    if (system_call_count[j] > 0 && j != SYS_print_count && j != SYS_toggle) {
       cprintf("%s %d\n", syscall_name[j], system_call_count[j]);
       z += system_call_count[j];
     }
   }
-  return z; // z is the count of all the system calls encountered
+  return 0; // z is the count of all the system calls encountered
 }
 
 int 
@@ -211,16 +211,15 @@ sys_ps() {
 int
 sys_add(void) {
     int a, b;
-
     int i = argint(0, &a);
     int j = argint(1, &b);
 
     if (i < 0 || j < 0) {
       return -1;
     }
-
     return a + b;
 }
+
 
 
 

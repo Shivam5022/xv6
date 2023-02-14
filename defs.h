@@ -129,8 +129,9 @@ void            wakeup(void*);
 void            yield(void);
 int             ps(void);
 
-void block(struct spinlock *);
-void unblock(int);
+void      block(struct spinlock *);
+void      unblock(int);
+
 
 // swtch.S
 void            swtch(struct context**, struct context*);

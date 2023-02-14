@@ -5,7 +5,13 @@
 int
 main(void)
 {
-	// toggle(); // This toggles the system trace on or off
-	printf(1, "\nsum of -2 and -3 is: %d\n",add(-2,-3));
+	toggle(); // This toggles the system trace on or off
+	printf(1,"This is for test \n" );
+	int cid = fork();
+	if(cid!=0){ // parent
+		print_count();
+		toggle();		
+	}
+	wait();
 	exit();
 }
