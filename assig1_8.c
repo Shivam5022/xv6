@@ -62,7 +62,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	// parent (co-ordinator) has tid = 0, rest have tid = 1, 2, 3.....
+	// parent (co-ordinator) has tid = -1, rest have tid = 0, 1, 2, 3.....
 	int divide = size / child_processes;
 
 	if (divide * child_processes != size) {
