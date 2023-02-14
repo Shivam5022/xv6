@@ -177,7 +177,6 @@ syscall(void)
   
 }
 
-
 // now we need some data structures for bookkeeping each transaction
 
 int allocated[512] = {0};
@@ -188,33 +187,24 @@ struct spinlock msgQueue_locks[NPROC];
 int setupp = 0; 
 struct msgQueue QQ[NPROC];  // this is queue of messages for each process
 
-// WHY SPINLOCKS USED (FOR REPORT PURPOSE)
-
-// In the sys_send function, spinlocks are used to protect shared data structures and ensure synchronization between the sender and receiver processes. The spinlocks are used to enforce mutual exclusion between the sender process and any other processes that might be accessing the same data structures.
-
-// The spinlocks are used to prevent the sender process from modifying the message queue while other processes are accessing it. This helps prevent race conditions, where two or more processes might try to modify the same data structure simultaneously, leading to incorrect results.
-
-// For example, in the sys_send function, the spinlock "msgQLocks" is used to protect the message queue "msgQ". Before the sender process inserts a message into the queue, it acquires the spinlock "msgQLocks". This ensures that no other process can access the message queue until the sender process has finished inserting the message. Once the message has been inserted, the sender process releases the spinlock "msgQLocks", allowing other processes to access the message queue again.
-
-// WHY BUFFER USED (IMPORTANT)
-
-// The message is temporarily stored in the buffer because the message passing system needs to allocate memory for the incoming message before adding it to the recipient's message queue.
-//  By using a buffer, the message passing system can quickly allocate memory for incoming messages without having to perform a slow memory allocation operation for each message. The buffer also allows for better control and management of memory allocation, as the buffer can be implemented with a fixed size or with a dynamic allocation strategy. 
-// Additionally, the buffer can be used to temporarily store messages if the recipient's message queue is full, allowing the sender to continue to send messages without being blocked.
-
-
-int 
-sys_send(void) {
+int initialise(void) {
   if(setupp == 0) {
+    for(int i = 0; i < NPROC; i++) {
+      setup(&QQ[i]);
+    }
     for(int i = 0; i < NPROC; i++) {
       initlock(&(msgQueue_locks[i]),"msgQueue_locks");
       initlock(&buffer_lock,"buffer_lock");
     }
-    for(int i = 0; i < NPROC; i++) {
-      setup(&QQ[i]);
-    }
     setupp = 1;
-  }  
+  } 
+  return 0;
+}
+
+int 
+sys_send(void) {
+  
+  initialise();  
 
   int sender_pid;
   int rec_pid;
@@ -231,7 +221,7 @@ sys_send(void) {
   }
 
   // send(sender_pid, rec_pid, msg);
-  struct message* final;   // this is the message struct we will add in out data 
+  struct message* final;   // this is the message struct we will add in our data 
   
   acquire(&buffer_lock);
   for(int i=0; i < NELEM(msg_buffer); i++) {
@@ -245,7 +235,7 @@ sys_send(void) {
       final->next = 0;
 
       acquire(&msgQueue_locks[rec_pid]);
-      insert(&QQ[rec_pid],final);  // inserted in the receiver's queue
+      add_in_queue(final, &QQ[rec_pid]);  // inserted in the receiver's queue
       unblock(rec_pid);
       release(&msgQueue_locks[rec_pid]);
       return 0;
@@ -259,7 +249,7 @@ sys_send(void) {
   // temp.next = 0;
   // final = &temp;
   // acquire(&msgQueue_locks[rec_pid]);
-  // insert(&QQ[rec_pid],final);
+  // add_in_queue(final, &QQ[rec_pid]);
   // unblock(rec_pid);
   // release(&msgQueue_locks[rec_pid]);
 
@@ -268,16 +258,8 @@ sys_send(void) {
 
 int
 sys_send_multi(void) {
-  if(setupp == 0) {
-    for(int i = 0; i < NPROC; i++) {
-      initlock(&(msgQueue_locks[i]),"msgQueue_locks");
-      initlock(&buffer_lock,"buffer_lock");
-    }
-    for(int i = 0; i < NPROC; i++) {
-      setup(&QQ[i]);
-    }
-    setupp = 1;
-  } 
+
+  initialise();
 
   int sender_pid;
   int *rec_pids;
@@ -298,8 +280,6 @@ sys_send_multi(void) {
       continue;
     }
     if(rec_pids[j] != myproc()->pid) {
-      // msg_mcast(rec_pids[i], msg);
-      // do stuff here
       int rec_pid = rec_pids[j];
       struct message* final;   // this is the message struct where we will add in our data 
   
@@ -315,7 +295,7 @@ sys_send_multi(void) {
           final->next = 0;
 
           acquire(&msgQueue_locks[rec_pid]);
-          insert(&QQ[rec_pid],final);  // inserted in the receiver's queue
+          add_in_queue(final, &QQ[rec_pid]);  // inserted in the receiver's queue
           unblock(rec_pid);
           release(&msgQueue_locks[rec_pid]);
           break;
@@ -328,17 +308,8 @@ sys_send_multi(void) {
 
 int 
 sys_recv(void) {
-  if(setupp == 0) {
-    for(int i = 0; i < NPROC; i++) {
-      initlock(&(msgQueue_locks[i]),"msgQueue_locks");
-      initlock(&buffer_lock,"buffer_lock");
-    }
-    for(int i = 0; i < NPROC; i++) {
-      setup(&(QQ[i]));
-    }
-    setupp = 1;
-  }
-
+ 
+  initialise();
   void *msg;
   int currentPID = myproc()->pid;
   
@@ -348,11 +319,11 @@ sys_recv(void) {
   }
 
   acquire(&(msgQueue_locks[currentPID]));
-  struct message* tempMSG = remove(&QQ[currentPID]);
+  struct message* tempMSG = remove_from_queue(&QQ[currentPID]);
   
   if(tempMSG == 0) {
     block(&(msgQueue_locks[currentPID]));
-    tempMSG = remove(&QQ[currentPID]);
+    tempMSG = remove_from_queue(&QQ[currentPID]);
   }
 
   // cprintf("%s \n", tempMSG -> msg);  // for debugging

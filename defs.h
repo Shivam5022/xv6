@@ -20,8 +20,8 @@ void            bwrite(struct buf*);
 
 //communication.c
 void setup(struct msgQueue* q);
-void insert(struct msgQueue* q,struct message* n);
-struct message* remove(struct msgQueue* q);
+void add_in_queue(struct message* n, struct msgQueue* q);
+struct message* remove_from_queue(struct msgQueue* q);
 
 // console.c
 void            consoleinit(void);

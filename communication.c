@@ -16,7 +16,7 @@ setup(struct msgQueue* Q) {
 }
 
 void
-insert(struct msgQueue* Q,struct message* n) {
+add_in_queue(struct message* n, struct msgQueue* Q) {
   n->next = 0;
   
   if(Q->last == 0) {
@@ -26,11 +26,11 @@ insert(struct msgQueue* Q,struct message* n) {
 
   Q->last->next = n;
   Q->last = n;
-
+  return;
 }
 
 struct message*
-remove(struct msgQueue* Q) {
+remove_from_queue(struct msgQueue* Q) {
 
   if(Q->front==0) {
     return 0;

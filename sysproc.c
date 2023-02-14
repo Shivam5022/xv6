@@ -197,10 +197,10 @@ sys_print_count() {
     int j = sorted_sys_calls[i];
     if (system_call_count[j] > 0 && j != SYS_print_count && j != SYS_toggle) {
       cprintf("%s %d\n", syscall_name[j], system_call_count[j]);
-      z += system_call_count[j];
+      z += system_call_count[j];   // z is the count of all the system calls encountered
     }
   }
-  return 0; // z is the count of all the system calls encountered
+  return 0; 
 }
 
 int 

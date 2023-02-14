@@ -189,7 +189,6 @@ UPROGS=\
 	_add\
 	_oppo\
 	_hola\
-	_saul\
 
 fs.img: mkfs README arr $(UPROGS)
 	./mkfs fs.img README arr $(UPROGS)
@@ -259,7 +258,7 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 EXTRA=\
 	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c kill.c\
 	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
-	first.c user_toggle.c print_count.c ps.c add.c oppo.c hola.c saul.c\
+	first.c user_toggle.c print_count.c ps.c add.c oppo.c hola.c \
 	printf.c umalloc.c\
 	README arr dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
 	.gdbinit.tmpl gdbutil\
