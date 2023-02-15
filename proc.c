@@ -551,19 +551,18 @@ ps() {
 }
 
 
+// block / unblock refernce taken from sleep function above
+
 void
 block(struct spinlock *lk)
 {
   struct proc *p = myproc();
-  
   if(lk != &ptable.lock) {
     acquire(&ptable.lock);
     release(lk);
   }
-
   p->state = SLEEPING;
   sched();
-  
   if(lk != &ptable.lock) {
     release(&ptable.lock);
     acquire(lk);

@@ -12,8 +12,8 @@ int main(int argc, char* argv[])
     }
     int x = atoi(argv[1]);
     int y = atoi(argv[2]);
-    printf(1, "%s %s \n", argv[1], argv[2]);
-    printf(1, "%d %d \n", x, y);
+    // printf(1, "%s %s \n", argv[1], argv[2]);
+    // printf(1, "%d %d \n", x, y);
     printf(1, "The sum of the input is %d\n", add(x, y));
     exit();
 }

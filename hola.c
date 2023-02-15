@@ -9,11 +9,11 @@ int min (int x, int y) {
 	return y;
 }
 
-void printfloat(float xx)
+void print_variance(float xx)
 {
-  int beg=(int)(xx);
-  int fin=(int)(xx*100)-beg*100;
-  printf(1, "%d.%d", beg, fin);
+ int beg=(int)(xx);
+ int fin=(int)(xx*100)-beg*100;
+ printf(1, "Variance of array for the file arr is %d.%d \n", beg, fin);
 }
 
 int
@@ -47,7 +47,7 @@ main(int argc, char *argv[])
   
   	//----FILL THE CODE HERE for unicast sum
 
-	int child_processes = 7; // between 1 and 8
+	int child_processes = 8; // between 1 and 8
 	if (child_processes < 1 || child_processes > 8) {
 		printf(1,"Child Processes should be between 1 to 8.\n");
 		exit();
@@ -161,9 +161,7 @@ main(int argc, char *argv[])
 	}
 
 	if (type == 1) {
-		printf(1,"Var of array for file %s is ", filename);
-		printfloat(variance);
-		printf(1, "\n");
+		print_variance(variance);
 	}
 
 	for (int i = 0; i < child_processes; i++) {
