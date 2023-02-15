@@ -182,21 +182,14 @@ UPROGS=\
 	_usertests\
 	_wc\
 	_zombie\
-	_assig1_1\
-	_assig1_2\
-	_assig1_3\
-	_assig1_4\
-	_assig1_5\
-	_assig1_6\
-	_assig1_7\
 	_assig1_8\
-	# _first\
-	# _user_toggle\
-	# _print_count\
-	# _ps\
-	# _add\
-	# _oppo\
-	# _hola\
+	_assig1_7\
+	_assig1_6\
+	_assig1_5\
+	_assig1_4\
+	_assig1_3\
+	_assig1_2\
+	_assig1_1\
 
 fs.img: mkfs README arr $(UPROGS)
 	./mkfs fs.img README arr $(UPROGS)

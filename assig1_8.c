@@ -2,7 +2,7 @@
 #include "stat.h"
 #include "user.h"
 
-volatile float mean = -1;
+volatile float average = -1;
 
 int min (int x, int y) {
 	if (x < y) return x;
@@ -107,29 +107,29 @@ main(int argc, char *argv[])
 		tot_sum = S;
 
 		if (type == 1) {
-			mean = tot_sum / (1.0 * size);
-			float temp = mean;
+			average = tot_sum / (1.0 * size);
+			float temp = average;
 			send_multi(coordinator, rec_pids, &temp);
 		}
 	}
 
 	if (type == 1) {
 		if (pid == 0) {  // child msg receiving multicasts
-			while (mean == -1) {
+			while (average == -1) {
 				float *msg = (float *)malloc(8);
 				int stat = -1;
 				while (stat == -1) {
 					stat = recv(msg);
 				}
-				mean = *msg;
+				average = *msg;
 
-				if (mean >= 0) break;
+				if (average >= 0) break;
 			}
 
 			float partial_var = 0.0;
 
 			for (int i = tid * divide; i < min(size, (1 + tid) * divide); i++) {
-				partial_var += (mean - arr[i]) * (mean - arr[i]);
+				partial_var += (average - arr[i]) * (average - arr[i]);
 			}
 
 			send(getpid(), coordinator, &partial_var);
@@ -150,8 +150,6 @@ main(int argc, char *argv[])
 		}
 
 		variance = V / (1.0 * size);
-
-
 	}
 
   	//------------------
