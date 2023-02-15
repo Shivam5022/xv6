@@ -9,6 +9,13 @@ int min (int x, int y) {
 	return y;
 }
 
+void printfloat(float xx)
+{
+  int beg=(int)(xx);
+  int fin=(int)(xx*100)-beg*100;
+  printf(1, "%d.%d", beg, fin);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -144,6 +151,7 @@ main(int argc, char *argv[])
 
 		variance = V / (1.0 * size);
 
+
 	}
 
   	//------------------
@@ -153,8 +161,11 @@ main(int argc, char *argv[])
 	}
 
 	if (type == 1) {
-		printf(1,"Var of array for file %s is %d\n", filename,(int) variance);
+		printf(1,"Var of array for file %s is ", filename);
+		printfloat(variance);
+		printf(1, "\n");
 	}
+
 	for (int i = 0; i < child_processes; i++) {
 		wait();
 	}
