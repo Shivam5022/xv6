@@ -119,6 +119,12 @@ extern int sys_send(void);
 extern int sys_recv(void);
 extern int sys_send_multi(void);
 
+extern int sys_exec_time(void);
+extern int sys_deadline(void);
+extern int sys_rate(void);
+extern int sys_sched_policy(void);
+extern int sys_get_pinfo(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -141,6 +147,7 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+
 [SYS_getyear] sys_getyear,
 [SYS_print_count] sys_print_count,
 [SYS_toggle]      sys_toggle,
@@ -148,7 +155,14 @@ static int (*syscalls[])(void) = {
 [SYS_add]         sys_add,
 [SYS_send]        sys_send,
 [SYS_recv]        sys_recv,
-[SYS_send_multi]  sys_send_multi
+[SYS_send_multi]  sys_send_multi,
+
+[SYS_exec_time]   sys_exec_time,
+[SYS_deadline]    sys_deadline,
+[SYS_rate]        sys_rate,
+[SYS_sched_policy] sys_sched_policy,
+[SYS_get_pinfo]    sys_get_pinfo
+
 };
 
 

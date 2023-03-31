@@ -51,6 +51,13 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+
+      //a2
+      if (myproc() != 0)
+        // cprintf("at tick %d pid %d is running\n", ticks, myproc()->pid);
+        
+      time_ticks_update();  // updating runtimes of each process 
+
       wakeup(&ticks);
       release(&tickslock);
     }
@@ -102,11 +109,51 @@ trap(struct trapframe *tf)
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
-  if(myproc() && myproc()->state == RUNNING &&
-     tf->trapno == T_IRQ0+IRQ_TIMER)
+  // if(myproc() && myproc()->state == RUNNING &&
+  //    tf->trapno == T_IRQ0+IRQ_TIMER)
+  //   yield();
+  
+  if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER)
+  {
+    if((myproc()->sched_policy >= 0) 
+        && (myproc()->elapsed_time >= myproc()->execution_time))
+    {
+      cprintf("The completed process has pid: %d\n", myproc()->pid);
+      exit();
+    }
+    else
     yield();
+  }
 
   // Check if the process has been killed since we yielded
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
     exit();
 }
+
+// // Force process to give up CPU on clock tick.
+// // If interrupts were on while locks held, would need to
+// // check nlock.
+// if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER)
+// {
+//   if((myproc()->sched_policy >= 0) && (myproc()->elapsed_time >= myproc()->exec_time))
+//   {
+//     cprintf("The completed process has pid: %d\n", myproc()->pid);
+//     exit();
+//   }
+//   else
+//   yield();
+// }
+
+
+
+// if(myproc() && myproc()->state == RUNNING && tf->trapno == T_IRQ0+IRQ_TIMER)
+// {
+//   if((process_state.sched_policy[myproc()->index] >= 0) 
+//       && (process_state.elapsed_time[myproc()->index] >= process_state.execution_time[myproc()->index]))
+//   {
+//     cprintf("The completed process has pid: %d\n", myproc()->pid);
+//     exit();
+//   }
+//   else
+//   yield();
+// }

@@ -50,8 +50,15 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
 
-  char *msg;   // for receiving messages from other processes.
-  int received; // indicator if we have received the message of not?
+  int index;   //a2
+
+  int sched_policy;    /* current scheduling policy of the process ( -1: XV6 default policy or 0: EDF or 1: RMA ) */
+  int weight;          /* current weight level of each process (1 -3) ( higher value represents lower priority ) */
+  int rate;
+  int execution_time;
+  int elapsed_time;
+  int wait_time;
+  int deadline;
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -59,3 +66,28 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+
+// struct process_state{
+//   int inuse [ NPROC ]; /* whether this slot of the process table is in use (1 or 0) */
+//   int pid [ NPROC ]; // PID of each process
+//   enum procstate state [ NPROC ]; /* current state of each process */
+
+//   int sched_policy [ NPROC ]; /* current scheduling policy of the process ( -1: XV6 default policy or 0: EDF or 1: RMA ) */
+//   int priority [ NPROC ]; /* current priority level of each process (1 -3) ( higher value represents lower priority ) */
+//   int rate [ NPROC ];
+//   int execution_time [ NPROC ];
+//   int elapsed_time [ NPROC ];
+//   int wait_time [ NPROC ];
+//   int deadline [ NPROC ];
+
+//   // struct spinlock state_lock;
+// } process_state;                              //a2
+
+// // basically when an entry in proc table is UNUSED, corresponding insue should be 0.
+
+
+void time_ticks_update();
+
+
+

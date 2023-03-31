@@ -1,5 +1,6 @@
 struct stat;
 struct rtcdate;
+struct process_state;
 
 // system calls
 int fork(void);
@@ -31,6 +32,12 @@ int add(int, int);
 int send(int sender_pid,int rec_pid, void* msg);
 int recv(void *msg);
 int send_multi( int sender_pid, int *rec_pids, void* msg);
+
+int exec_time(int, int);
+int deadline(int, int);
+int rate(int, int);
+int sched_policy(int, int);
+int get_pinfo(struct process_state*);
 
 // ulib.c
 int stat(const char*, struct stat*);

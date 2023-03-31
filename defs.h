@@ -11,6 +11,7 @@ struct stat;
 struct superblock;
 struct msgQueue;
 struct message;
+struct process_state;
 
 // bio.c
 void            binit(void);
@@ -132,6 +133,10 @@ int             ps(void);
 void      block(struct spinlock *);
 void      unblock(int);
 
+int __exec_time(int, int);
+int __deadline(int, int);
+int __rate(int, int);
+int __policy(int, int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

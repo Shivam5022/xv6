@@ -47,19 +47,29 @@ static char *syscall_name[] = {
 [SYS_add]      "sys_add",
 [SYS_send]     "sys_send",
 [SYS_recv]     "sys_recv",
-[SYS_send_multi]     "sys_send_multi"
+[SYS_send_multi]     "sys_send_multi",
+
+[SYS_exec_time]   "sys_exec_time",
+[SYS_deadline]    "sys_deadline",
+[SYS_rate]        "sys_rate",
+[SYS_sched_policy] "sys_sched_policy",
+[SYS_get_pinfo]    "sys_get_pinfo"
+
 };
 
 int sorted_sys_calls[] = {
 SYS_add,
 SYS_chdir,
 SYS_close,
+SYS_deadline,
 SYS_dup,
 SYS_exec,
+SYS_exec_time,
 SYS_exit,
 SYS_fork,
 SYS_fstat,
 SYS_getpid,
+SYS_get_pinfo,
 SYS_kill,
 SYS_link,
 SYS_mkdir,
@@ -68,9 +78,11 @@ SYS_open,
 SYS_pipe,
 SYS_print_count,
 SYS_ps,
+SYS_rate,
 SYS_read,
 SYS_recv,
 SYS_sbrk,
+SYS_sched_policy,
 SYS_send,
 SYS_send_multi,
 SYS_sleep,
@@ -179,14 +191,7 @@ sys_toggle() {
   }
   for (int i = 0; i < TOT; i++) {
     system_call_count[i] = 0;
-  }
-     
-  // if (current_trace_state == TRACE_ON)
-  // cprintf("Toggle is ON \n");
-  
-  // if (current_trace_state == TRACE_OFF)
-  // cprintf("Toggle is OFF \n");
-  
+  }  
   return 0;
 }
 
@@ -218,6 +223,70 @@ sys_add(void) {
       return -1;
     }
     return a + b;
+}
+
+int
+sys_exec_time(void) {
+    int a, b;
+    int i = argint(0, &a);
+    int j = argint(1, &b);
+
+    if (i < 0 || j < 0) {
+      return -22;
+    }
+    // a: pid, b: exec_time
+    return __exec_time(a, b);
+}
+
+int
+sys_deadline(void) {
+    int a, b;
+    int i = argint(0, &a);
+    int j = argint(1, &b);
+
+    if (i < 0 || j < 0) {
+      return -22;
+    }
+    // a: pid, b: deadline
+    return __deadline(a, b);
+}
+
+int
+sys_rate(void) {
+    int a, b;
+    int i = argint(0, &a);
+    int j = argint(1, &b);
+
+    if (i < 0 || j < 0) {
+      return -22;
+    }
+    // a: pid, b: rate
+    return __rate(a, b);
+}
+
+int
+sys_sched_policy(void) {
+    int a, b;
+    int i = argint(0, &a);
+    int j = argint(1, &b);
+
+    if (i < 0 || j < 0) {
+      return -22;
+    }
+    // a: pid, b: policy
+    return __policy(a, b);
+}
+
+int 
+sys_get_pinfo(void) {   // now of no use
+    void* pstate;
+    int i = argptr(0,(void*) &pstate, sizeof(void*));
+
+    if (i < 0) {
+      return -22;
+    }
+   return 0;
+
 }
 
 

@@ -28,6 +28,10 @@
 #define SYS_send 27
 #define SYS_recv 28 
 #define SYS_send_multi 29
-
+#define SYS_exec_time 30    
+#define SYS_deadline 31
+#define SYS_rate 32
+#define SYS_sched_policy 33
+#define SYS_get_pinfo 34
 
 

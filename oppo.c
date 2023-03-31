@@ -1,85 +1,103 @@
-// #include "types.h"
-// #include "stat.h"
-// #include "user.h"
 
-// #define MSGSIZE 8
+// https://github.com/asafch/xv6-scheduling/tree/22ce8e98fb1fdacc5a341d75008f8a914f5c8ec7
 
-// int main(void)
-// {
-// 	toggle(); 
-// 	printf(1,"%s\n","IPC Test case");
-	
-// 	int cid = fork();
-// 	if(cid==0){
-// 		// This is child
-// 		char *msg = (char *)malloc(MSGSIZE);
-// 		int stat=-1;
-// 		while(stat==-1){
-// 			stat = recv(msg);
-// 			// stat = recv(&myid ,&from, msg);
-// 		}
-// 		printf(1,"2 CHILD: msg recv is: %s \n", msg );
-// 		exit();
-// 	}else{
-// 		// This is parent
-// 		char *msg_child = (char *)malloc(MSGSIZE);
-// 		msg_child = "PQER";
-// 		printf(1,"1 PARENT: msg sent is: %s \n", msg_child );
-// 		send(getpid(),cid,msg_child);	
-// 		free(msg_child);
-// 	}
-// 	wait();
-// 	exit();
-// }
 
+// normal 3645
+// edf 4365
 
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "pstate.h"
 
-#define MSGSIZE 8
+int main(int argc, char *argv[])
+{   
+    int num_procs = 3;
+    int Deadline[3] = {7, 24, 15};
+    int exectime[3] = {5, 6, 4};
 
-int main(int argc, char const *argv[]) {
-  int pid;
-  int processes = 5;  // 1 parent, 4 child
-  int thread_ids[8] = {-1};  // -1 means illegal pid
-  int parent = getpid();
-  int tid = 0;
+    int parent_pid = getpid();
 
-  for (int i = 1; i < processes; i++) {
-    tid = i;
-    pid = fork();
-    if (pid == 0) {
-      // child process
-      break;
-    } else {
-      thread_ids[i - 1] = pid;
-      tid = 0;
+    printf(1, "og_pid: %d \n", parent_pid);
+
+    // Set the scheduling policy to EDF
+    deadline(parent_pid, 11);
+    exec_time(parent_pid, 4);
+    sched_policy(parent_pid, 0);
+
+    for(int i = 0; i < num_procs; i++)
+    {
+        int cid = fork();
+        if (cid != 0)
+        {
+            // Set the scheduling policy to EDF
+            deadline(cid, Deadline[i]);
+            exec_time(cid, exectime[i]);
+            sched_policy(cid, 0);
+        }
+        else
+        {
+            /*The XV6 kills the process if th exec time is completed*/
+            while(1) {
+                
+            }
+        }
     }
-  }
-  if (pid == 0) {
-    // child process (receive)
-    char *msg = (char *)malloc(MSGSIZE);
-    int stat = -1;
-    while(stat == -1){
-      stat = recv(msg);
-    }
-    printf(1,"%s %d \n", msg, tid);
-    // printf(1,"CHILD: message received is %s %d \n", msg, tid);
-    exit();
-  } else {
-    // parent process (send)
-    char *msg_child = (char *)malloc(MSGSIZE);
-    msg_child = "@";
-    printf(1,"%s %d \n", msg_child, tid);
-    // printf(1,"PARENT: message sent is %s %d \n", msg_child, tid);
-    send_multi(parent, thread_ids, msg_child);
-    free(msg_child);
-  }
 
-  for (int i = 1; i < processes; i++) {
-	wait();
-  }
-  exit();
-  return 0;
+    while(1) {
+
+    }
 }
+
+
+
+// #include "types.h"
+// #include "stat.h"
+// #include "user.h"
+// #include "pstate.h"
+
+// int main(int argc, char *argv[])
+// {   
+//     int num_procs = 2;
+//     int Rate[2] = {5, 25};
+//     int exectime[2] = {50, 100};
+
+//     int parent_pid = getpid();
+
+//     // Set the scheduling policy to RM
+//     rate(parent_pid, 15);
+//     exec_time(parent_pid, 200);
+//     sched_policy(parent_pid, 1);
+
+//     // printf(1, "%d %d %d \n", data->pid[0], data->state[0], data->sched_policy[0]);
+//     // printf(1, "%d %d %d \n", data->pid[1], data->state[1], data->sched_policy[1]);
+//     // printf(1, "%d %d %d \n", data->pid[2], data->state[2], data->sched_policy[2]);
+
+//     //   pid   prio
+//     //    3     2
+//     //    4     3
+//     //    5     1
+
+//     for(int i = 0; i < num_procs; i++)
+//     {
+//         int cid = fork();
+//         if (cid != 0)
+//         {
+//             // Set the scheduling policy to RM
+//             rate(cid, Rate[i]);
+//             exec_time(cid, exectime[i]);
+//             sched_policy(cid, 1);
+//         }
+//         else
+//         {
+//             /*The XV6 kills the process if the exec time is completed*/
+//             while(1) {
+                
+//             }
+//         }
+//     }
+
+//     while(1) {
+
+//     }
+// }
