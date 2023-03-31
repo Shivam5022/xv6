@@ -1,6 +1,4 @@
 
-// https://github.com/asafch/xv6-scheduling/tree/22ce8e98fb1fdacc5a341d75008f8a914f5c8ec7
-
 
 // normal 3645
 // edf 4365
