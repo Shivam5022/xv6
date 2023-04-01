@@ -155,6 +155,7 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+  p->arrival = ticks;
 
   release(&ptable.lock);
 }
@@ -223,7 +224,7 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
-
+  np->arrival = ticks;
 
   release(&ptable.lock);
 
@@ -388,8 +389,8 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    uint minD = 100000;
-    uint minP = 1000;
+    uint minD = 100000, pid_1 = 100;
+    uint minP = 1000, pid_2 = 100;
     int found = 0, policy = -1;
 
     acquire(&ptable.lock);
@@ -439,18 +440,20 @@ scheduler(void)
         // int policy = process_state.sched_policy[p->index];
 
         if (policy == 0) {    // edf
-          if (p->deadline < minD) {
+          if ((p->deadline < minD) || (p->deadline == minD && p->pid < pid_1)) {
             minD = p->deadline;
+            pid_1 = p->pid;
             new = p;
             found = 1;
           }
         } 
         if (policy == 1) {   // rms
-          if (p->weight < minP) {
+          if ((p->weight < minP) || (p->weight == minP && p->pid < pid_2)) {
             minP = p->weight;
+            pid_2 = p->pid;
             new = p;
             found = 1;
-          }      
+          }    
         }
       }
 
@@ -712,14 +715,12 @@ void time_ticks_update() {        //a2
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     switch(p->state) {
       // case SLEEPING:
-      //   process_state.sleep_time[p->index]++;
+      //   p->sleep_time++;
       //   break;
       case RUNNABLE:
-        // process_state.wait_time[p->index]++;
         p->wait_time++;
         break;
       case RUNNING:
-        // process_state.elapsed_time[p->index]++;
         p->elapsed_time++;
         break;
       default:
@@ -735,7 +736,6 @@ int __exec_time(int pid, int time) {
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
-      // process_state.execution_time[p->index] = time;
       p->execution_time = time;
       release(&ptable.lock);
       return 0;
@@ -750,8 +750,7 @@ int __deadline(int pid, int deadtime) {
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
-      // process_state.deadline[p->index] = deadtime;
-      p->deadline = deadtime;
+      p->deadline = deadtime + p->arrival;
       release(&ptable.lock);
       return 0;
     }
@@ -765,7 +764,6 @@ int __rate(int pid, int rate) {
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
-      // process_state.rate[p->index] = rate;
       p->rate = rate;
       int prio;
       if ((30 - rate) % 29 == 0) {
@@ -775,7 +773,6 @@ int __rate(int pid, int rate) {
         prio++;
       }
       if(prio < 1) prio = 1;
-      // process_state.priority[p->index] = prio;
       p->weight = prio;
       release(&ptable.lock);
       return 0;
@@ -790,14 +787,33 @@ int __policy(int pid, int policy) {
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
-      // process_state.sched_policy[p->index] = policy;
       p->sched_policy = policy;
-      release(&ptable.lock);
-      return 0;
+      // release(&ptable.lock);
+      break;
     }
   }
 
-  return -22;
+  int n = 0; // total runnable
+  float U_rms = 0; // utiliation
+  float U_edf = 0;
+
+  // acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p->state == RUNNABLE || p->state == RUNNING) {
+      ++n;
+      // cprintf("n = %d and exec = %d, dead = %d \n", n, p->execution_time, p->deadline);
+      U_rms += (1.0 * (p->rate) * (p->execution_time)) / (100.0);
+      if(p->deadline != 0) U_edf += (1.0 * (p->execution_time)) / (p->deadline);
+    }
+  }
+  int beg_edf = (int)(U_edf);
+  int fin_edf = (int)(U_edf * 100)- beg_edf * 100;
+  // printf(1, "Variance of array for the file arr is %d.%d \n", beg, fin);
+  cprintf("n = %d and U_edf = %d.%d \n", n, beg_edf, fin_edf);
+  // cprintf("n = %d and U_rms = %d \n", n, U_rms);
+  release(&ptable.lock);
+
+  return 0;
 } 
 
 
@@ -811,4 +827,54 @@ int __policy(int pid, int policy) {
 
 
 
+// int __policy(int pid, int policy) {
+//   struct proc *p;
+//   acquire(&ptable.lock);
+//   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//     if(p->pid == pid){
+//       // process_state.sched_policy[p->index] = policy;
+//       p->sched_policy = policy;
+//       // if(policy == 0 && __edf_check(p->arrival_time)){
+//       //   p->killed = 1;
+//       //   cprintf("Check violated for pid: %d\n", pid);
+//       //   release(&ptable.lock);
+//       //   return -22;      
+//       // }
+//       release(&ptable.lock);
+//       return 0;
+//     }
+//   }
 
+//   return -22;
+// } 
+
+// int __edf_check(int t0){
+//   struct proc *p;
+//   struct proc temp_proc[NPROC];
+//   int pos = 0;
+
+//   // sort all process on the basis of the deadlines
+//   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//     if(p->sched_policy==0 && (p->state==RUNNABLE||p->state==RUNNING)){
+//       temp_proc[pos++] = *p; 
+//     }
+//   }
+//   for(int i = 0; i < pos - 1; i++){
+//     for(int j = 0; j < pos - i - 1; j++){
+//       if(temp_proc[j + 1].deadline < temp_proc[j].deadline){
+//         struct proc tmp = temp_proc[j + 1];
+//         temp_proc[j + 1] = temp_proc[j];
+//         temp_proc[j] = tmp;
+//       }
+//     }
+//   }
+
+//   int t = t0;
+//   for(int i=0; i<pos; i++){
+//     t += temp_proc[i].execution_time - temp_proc->elapsed_time;
+//     if(t>temp_proc[i].deadline) return 1;
+//   }
+
+//   return 0;
+
+// }
