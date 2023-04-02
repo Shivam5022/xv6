@@ -138,6 +138,9 @@ int __deadline(int, int);
 int __rate(int, int);
 int __policy(int, int);
 
+int __rms_check();
+int __edf_check(int);
+
 // swtch.S
 void            swtch(struct context**, struct context*);
 
