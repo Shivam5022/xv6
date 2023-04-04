@@ -59,7 +59,7 @@ struct proc {
   int elapsed_time;
   int wait_time;
   int deadline;
-
+  int deadline_relative;
   int arrival;
 };
 

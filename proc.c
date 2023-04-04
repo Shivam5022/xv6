@@ -14,6 +14,10 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
+struct proc* all_processes[100];
+int idx = 0;
+
+int utility[] = {1000, 828, 779, 756, 743, 734, 728, 724, 720, 717, 715, 713, 711, 710, 709, 708, 707, 706, 705, 705, 704, 704, 703, 703, 702, 702, 702, 701, 701, 701, 700, 700, 700, 700, 700, 699, 699, 699, 699, 699, 699, 698, 698, 698, 698, 698, 698, 698, 698, 697, 697, 697, 697, 697, 697, 697, 697, 697, 697, 697, 697, 697, 696, 696, 696, 696, 696, 696, 696};
 
 static struct proc *initproc;
 
@@ -224,7 +228,8 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
-  np->arrival = ticks;
+  np->arrival = -1;            // made changes here
+  np->deadline = -1;
 
   release(&ptable.lock);
 
@@ -414,6 +419,9 @@ scheduler(void)
         // Switch to chosen process.  It is the process's job
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
+
+        // cprintf("pid %d is getting scheduled at %d in policy %d\n", p->pid, ticks, policy);
+
         c->proc = p;
         switchuvm(p);
 
@@ -437,7 +445,6 @@ scheduler(void)
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE)
           continue;
-        // int policy = process_state.sched_policy[p->index];
 
         if (policy == 0) {    // edf
           if ((p->deadline < minD) || (p->deadline == minD && p->pid < pid_1)) {
@@ -458,13 +465,11 @@ scheduler(void)
       }
 
       if (found == 1) {
-        // cprintf("pid %d is getting scheduled at %d\n", new->pid, ticks);
+        // cprintf("pid %d is getting scheduled at %d in policy %d\n", new->pid, ticks, policy);
         c->proc = new;
         switchuvm(new);
 
         new->state = RUNNING;
-
-        // process_state.state[new->index] = RUNNING;
 
         swtch(&(c->scheduler), new->context);
         switchkvm();
@@ -721,6 +726,7 @@ void time_ticks_update() {        //a2
         p->wait_time++;
         break;
       case RUNNING:
+        if (p->deadline != -1)
         p->elapsed_time++;
         break;
       default:
@@ -750,7 +756,7 @@ int __deadline(int pid, int deadtime) {
   acquire(&ptable.lock);
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
-      p->deadline = deadtime + p->arrival;
+      p->deadline_relative = deadtime;
       release(&ptable.lock);
       return 0;
     }
@@ -789,80 +795,38 @@ int __policy(int pid, int policy) {
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->pid == pid){
       p->sched_policy = policy;
+      p->arrival = ticks;
+      p->deadline = p->arrival + p->deadline_relative;
+
+      cprintf("************ PID %d arrives at tick %d ************* \n", p->pid, ticks);
+
+      // now let us see if its schedulable or not
+      int U_edf = 0;
+      int U_rms = 0;
+      for (int i = 0; i < idx; i++) {
+        if (policy == 0) U_edf += (all_processes[i]->execution_time * 1000) / (all_processes[i]->deadline_relative);
+        if (policy == 1) U_rms += (10 * (all_processes[i]->rate) * (all_processes[i]->execution_time )) ;
+      }
+      if (policy == 0) U_edf += (p->execution_time * 1000) / (p->deadline_relative);
+      if (policy == 1) U_rms += (10 * (p->rate) * (p->execution_time));
+
+      if (policy == 0 && U_edf <= 1000) {
+        cprintf("%d :::: %d \n", idx, U_edf);
+        all_processes[idx++] = p;
+      } else if (policy == 1 && U_rms <= utility[idx]) {
+        all_processes[idx++] = p;
+      } else {
+        p->killed = 1;
+        if (policy == 0) cprintf(".............. no EDF for %d, so killing it ............ as U is %d\n", pid, U_edf);
+        if (policy == 1) cprintf(".............. no RMS for %d, so killing it ............ as U is %d\n", pid, U_rms);
+        release(&ptable.lock);
+        return -22;
+      }
       break;
     }
   }
   release(&ptable.lock);
-
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->pid == pid){
-      if(p->sched_policy == 0 && __edf_check(p->arrival)){
-        p->killed = 1;
-        release(&ptable.lock);
-        return -22;
-      }
-      if(p->sched_policy == 1 && __rms_check()){
-        p->killed = 1;
-        release(&ptable.lock);
-        return -22;
-      }
-      break;
-    }
-  }
-  release(&ptable.lock);
-
   return 0;
 }
 
-int __rms_check(){
-  float utility[] = {1,0.828427,0.779763,0.756828,0.743492,0.734772,0.728627,0.724062,0.720538,0.717735,0.715452,0.713557,0.711959,0.710593,0.709412,0.708381,0.707472,0.706666,0.705946,0.705298,0.704713,0.704182,0.703698,0.703254,0.702846,0.702469,0.702121,0.701798,0.701497,0.701217,0.700955,0.700709,0.700478,0.700261,0.700056,0.699863,0.699681,0.699508,0.699343,0.699188,0.69904,0.698898,0.698764,0.698636,0.698513,0.698396,0.698284,0.698176,0.698073,0.697974,0.697879,0.697788,0.6977,0.697615,0.697533,0.697455,0.697379,0.697306,0.69723};
-  int count = 0;
-  float U_rms = 0;
-  struct proc *p;
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->sched_policy==1 && (p->state==RUNNABLE||p->state==RUNNING)){
-      count++; 
-      U_rms += (1.0 * (p->rate) * (p->execution_time - p->elapsed_time)) / (100.0);
-    }
-  }
-
-  cprintf("%d counts and %d.%d utility \n", count, (int)U_rms, (int)(100.0 * U_rms) - (int)U_rms);
-
-  if(U_rms > utility[count-1]){
-    return 1;
-  }
-  return 0;
-  
-}
-
-int __edf_check(int t0){
-  struct proc *p;
-  struct proc temp_proc[NPROC];
-  int pos = 0;
-
-  // sort all process on the basis of the deadlines
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if(p->sched_policy==0 && (p->state==RUNNABLE||p->state==RUNNING)){
-      temp_proc[pos++] = *p; 
-    }
-  }
-  for(int i=0; i<pos-1; i++){
-    for(int j=i+1; j<pos; j++){
-      if(temp_proc[i].deadline > temp_proc[j].deadline){
-        struct proc tmp = temp_proc[i];
-        temp_proc[i] = temp_proc[j];
-        temp_proc[j] = tmp;
-      }
-    }
-  }
-
-  int t = t0;
-  for(int i=0; i<pos; i++){
-    t += temp_proc[i].execution_time - temp_proc[i].elapsed_time;
-    if(t>temp_proc[i].deadline) return 1;
-  }
-
-  return 0;
-}
 
